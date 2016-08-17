@@ -1,7 +1,9 @@
 package club.com.serverterminal;
 
+import android.app.AlertDialog;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Handler;
@@ -17,7 +19,18 @@ public class MainActivity extends AppCompatActivity {
         public void handleMessage(Message msg) {
             switch (msg.what) {
                 case 0:
-                    RFDialog.aaa(MainActivity.this);
+                    RFDialog.show(MainActivity.this, "Error", "Did not find central control terminal whether retry?",
+                            new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog, int which) {
+                                    Intent i = new Intent(MainActivity.this, MainService.class);
+                                    i.putExtra("id", MainService.SEND_BROADCAST_TO_CENTER);
+                                    MainActivity.this.startService(i);
+                                }
+                            },
+                            new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog, int which) {
+                                }
+                            });
                     break;
 
                 case 1:

@@ -22,9 +22,11 @@ public class MainService extends Service {
     private ServiceHandler mServiceHandler;
     private Handler mActivityHandler = null;
     private HttpServer mHttpServer = null;
+    private String mControlIP = null;
 
     public final static int SEND_BROADCAST_TO_CENTER = 10000;
-    public final static int CHECK_CENTER_CONTROL = 10001;
+    public final static int CHECK_CENTER_CONTROL     = 10001;
+    public final static int UPDATE_MSG               = 10002;
 
     private final IBinder mBinder = new LocalBinder();
 
@@ -66,8 +68,12 @@ public class MainService extends Service {
                 case CHECK_CENTER_CONTROL:
                     Handler h = App.getHandler();
                     if(h != null){
-
+                        h.sendEmptyMessage(0);
                     }
+                    break;
+                case UPDATE_MSG:
+                    mControlIP = ((Intent)msg.obj).getStringExtra("ip");
+                    CNTrace.d("mControlIP : " + mControlIP);
                     break;
             }
         }
@@ -104,6 +110,15 @@ public class MainService extends Service {
         mNotificationManager.notify(100, mBuilder.build());
     }
 
+    private void createHttpServer() {
+        mHttpServer = new HttpServer(8092);
+        try {
+            mHttpServer.start();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     @Override
     public void onCreate() {
         createNotification();
@@ -122,15 +137,6 @@ public class MainService extends Service {
         mServiceHandler.sendEmptyMessage(SEND_BROADCAST_TO_CENTER);
     }
 
-    private void createHttpServer() {
-        mHttpServer = new HttpServer(8092);
-        try {
-            mHttpServer.start();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         // For each start request, send a message to start a job and deliver the
@@ -141,6 +147,12 @@ public class MainService extends Service {
         //mServiceHandler.sendMessage(msg);
 
         // If we get killed, after returning from here, restart
+
+        Message msg = mServiceHandler.obtainMessage();
+        msg.what = intent.getIntExtra("id", -1);
+        msg.obj = intent;
+        mServiceHandler.sendMessage(msg);
+
         return START_STICKY;
     }
 
