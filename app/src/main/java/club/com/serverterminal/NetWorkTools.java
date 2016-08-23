@@ -1,14 +1,18 @@
 package club.com.serverterminal;
 
 import android.content.Context;
+import android.content.Intent;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.text.format.Formatter;
 
 import java.io.IOException;
+import java.io.InterruptedIOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.SocketException;
+import java.net.UnknownHostException;
 
 /**
  * Created by kingroc on 16-8-11.
@@ -35,18 +39,32 @@ public class NetWorkTools {
 
         DatagramSocket theSocket = null;
         try {
-           // for (int i = 0; i < 256; i++) {
-                InetAddress server = InetAddress.getByName(Formatter.formatIpAddress(broadCastIP));
-                //InetAddress server = InetAddress.getByName(Formatter.formatIpAddress(broadCastIP | ((0xFF - i) << 24)));
-                theSocket = new DatagramSocket();
-                String data = "Hello";
-                DatagramPacket theOutput = new DatagramPacket(data.getBytes(), data.length(), server, mPort);
-                theSocket.send(theOutput);
-            //}
-        } catch (IOException e) {
+            InetAddress server = InetAddress.getByName(Formatter.formatIpAddress(broadCastIP));
+            theSocket = new DatagramSocket();
+            theSocket.setSoTimeout(2000);
+            String sendData = "Hello";
+            DatagramPacket theOutput = new DatagramPacket(sendData.getBytes(), sendData.length(), server, mPort);
+            theSocket.send(theOutput);
+
+            DatagramPacket receivePacket =  new DatagramPacket(new byte[sendData.getBytes().length], sendData.getBytes().length);
+            theSocket.receive(receivePacket);
+            String s = new String(receivePacket.getData(), 0, receivePacket.getLength(), "UTF-8");
+            CNTrace.d("addr : " + receivePacket.getAddress().getHostAddress() + ", port : " + receivePacket.getPort() + ", s : " + s);
+
+            Intent i = new Intent(App.getContext(), MainService.class);
+            i.putExtra("id", MainService.UPDATE_MSG);
+            i.putExtra("ip", receivePacket.getAddress().getHostAddress());
+            App.getContext().startService(i);
+        } catch (UnknownHostException e){
             e.printStackTrace();
-        } finally {
-            if (theSocket != null)
+        }catch (SocketException e){
+            e.printStackTrace();
+        }catch (InterruptedIOException e){
+            e.printStackTrace();
+        }catch (IOException e){
+            e.printStackTrace();
+        }finally {
+            if(theSocket != null)
                 theSocket.close();
         }
     }

@@ -66,11 +66,14 @@ public class MainService extends Service {
                     break;
 
                 case CHECK_CENTER_CONTROL:
-                    Handler h = App.getHandler();
-                    if(h != null){
-                        h.sendEmptyMessage(0);
+                    if(mControlIP == null) {
+                        Handler h = App.getHandler();
+                        if (h != null) {
+                            h.sendEmptyMessage(0);
+                        }
                     }
                     break;
+
                 case UPDATE_MSG:
                     mControlIP = ((Intent)msg.obj).getStringExtra("ip");
                     CNTrace.d("mControlIP : " + mControlIP);
